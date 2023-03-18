@@ -66,6 +66,10 @@ public:
         log(ERROR, file, line, args...);
     }
 
+    void set_level(Level level) {
+        level_ = level;
+    }
+
 private:
     std::ofstream file_stream_;
     static Level level_; // 将level_变量声明为静态变量
@@ -95,7 +99,7 @@ private:
     }
 };
 
-
+Logger::Level Logger::level_ = Logger::DEBUG;
 
 #define LOG_DEBUG(logger, ...) \
     logger.debug(__FILE__, __LINE__, __VA_ARGS__)
