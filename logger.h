@@ -17,8 +17,7 @@ public:
         ERROR
     };
 
-    Logger(const std::string& filename, Level level = INFO) :
-        level_(level) {
+    Logger(const std::string& filename) {
         file_stream_.open(filename, std::ios::out | std::ios::app);
     }
 
@@ -69,7 +68,7 @@ public:
 
 private:
     std::ofstream file_stream_;
-    Level level_;
+    static Level level_; // 将level_变量声明为静态变量
     std::mutex mutex_;
 
     std::string level_to_string(Level level) {
@@ -95,6 +94,8 @@ private:
         log_impl(std::forward<Args>(args)...);
     }
 };
+
+
 
 #define LOG_DEBUG(logger, ...) \
     logger.debug(__FILE__, __LINE__, __VA_ARGS__)
