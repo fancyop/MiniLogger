@@ -17,14 +17,9 @@ public:
         ERROR
     };
 
-    Logger(const std::string& filename) {
-        file_stream_.open(filename, std::ios::out | std::ios::app);
-    }
-
-    ~Logger() {
-        if (file_stream_.is_open()) {
-            file_stream_.close();
-        }
+    static Logger& get_instance(const std::string& filename = "") {
+        static Logger instance(filename);
+        return instance;
     }
 
     template<typename ...Args>
@@ -71,6 +66,20 @@ public:
     }
 
 private:
+    Logger(const std::string& filename) {
+        if (filename.empty()) {
+            file_stream_.open("log.txt", std::ios::out | std::ios::app);
+        } else {
+            file_stream_.open(filename, std::ios::out | std::ios::app);
+        }
+    }
+
+    ~Logger() {
+        if (file_stream_.is_open()) {
+            file_stream_.close();
+        }
+    }
+
     std::ofstream file_stream_;
     static Level level_; // 将level_变量声明为静态变量
     std::mutex mutex_;
@@ -101,11 +110,11 @@ private:
 
 Logger::Level Logger::level_ = Logger::DEBUG;
 
-#define LOG_DEBUG(logger, ...) \
-    logger.debug(__FILE__, __LINE__, __VA_ARGS__)
-#define LOG_INFO(logger, ...) \
-    logger.info(__FILE__, __LINE__, __VA_ARGS__)
-#define LOG_WARNING(logger, ...) \
-    logger.warning(__FILE__, __LINE__, __VA_ARGS__)
-#define LOG_ERROR(logger, ...) \
-    logger.error(__FILE__, __LINE__, __VA_ARGS__)
+#define LOG_DEBUG(...) \
+    Logger::get_instance().debug(__FILE__, __LINE__, __VA_ARGS__)
+#define LOG_INFO(...) \
+    Logger::get_instance().info(__FILE__, __LINE__, __VA_ARGS__)
+#define LOG_WARNING(...) \
+    Logger::get_instance().warning(__FILE__, __LINE__, __VA_ARGS__)
+#define LOG_ERROR(...) \
+    Logger::get_instance().error(__FILE__, __LINE__, __VA_ARGS__)
