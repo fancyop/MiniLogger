@@ -2,20 +2,17 @@
 
 #pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" ) // 设置入口地址1
 
-int main() {
-    // 获取单例对象
-    Logger::get_instance("example.log");
+int main()
+{
+    // Get the logger instance
+    auto& logger = Logger::get_instance("mylogs", "wwww.log", 10*1024*1024);
 
-    // 设置日志级别
-    Logger::get_instance().set_level(Logger::Level::WARNING);
+    // Set the log level to debug
+    logger.set_level(Logger::DEBUG);
 
-    // 输出日志
-    LOG_DEBUG("debug message");
-    LOG_INFO("info message");
-    LOG_WARNING("warning message");
-    LOG_ERROR("error message");
+    LOG_DEBUG("This is a message: ");
+    LOG_WARNING("This is a message with multiple arguments: ", 1, " ", 2.0, " ", '3');
 
     return 0;
 }
-
 
