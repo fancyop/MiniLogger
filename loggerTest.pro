@@ -7,4 +7,4 @@ SOURCES += \
         main.cpp
 
 HEADERS += \
-    logger.h
+    logger.hpp

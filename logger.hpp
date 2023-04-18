@@ -12,13 +12,19 @@
 #include <array>
 #include <queue>
 
+#ifdef _WIN32
+#include <windows.h>
+#elif __unix__
+#include <unistd.h>
+#endif
+
 class Logger {
 public:
-    enum Level {
-        DEBUG,
-        INFO,
-        WARNING,
-        ERROR
+    enum Level  {
+        Debug,
+        Info,
+        Warning,
+        Error
     };
 
     static Logger& get_instance(const std::string& filedirectory = "", const std::string& filename = "", size_t max_size = 5 * 1024 * 1024) {
@@ -28,19 +34,19 @@ public:
 
     template<typename ...Args>
     void debug(const char* file, int line, Args... args) {
-        log(DEBUG, file, line, args...);
+        log(Debug, file, line, args...);
     }
     template<typename ...Args>
     void info(const char* file, int line, Args... args) {
-        log(INFO, file, line, args...);
+        log(Info, file, line, args...);
     }
     template<typename ...Args>
     void warning(const char* file, int line, Args... args) {
-        log(WARNING, file, line, args...);
+        log(Warning, file, line, args...);
     }
     template<typename ...Args>
     void error(const char* file, int line, Args... args) {
-        log(ERROR, file, line, args...);
+        log(Error, file, line, args...);
     }
 
     void set_level(Level level) {
@@ -50,6 +56,11 @@ public:
 private:
     Logger(const std::string& filedirectory, const std::string& filename, size_t max_size) : max_size_(max_size), stop_(false) {
 
+#ifdef _WIN32
+        pid_ = GetCurrentProcessId();
+#elif __unix__
+        pid_ = getpid();
+#endif
 
         std::string file_directory;
         if (filedirectory.empty()) {
@@ -107,7 +118,7 @@ private:
 
         std::stringstream msg;
         msg << std::put_time(std::localtime(&now_c), "%Y-%m-%d %H:%M:%S") << "." << std::setfill('0') << std::setw(3) << now_ms
-            << " [" << std::this_thread::get_id() << "] [" << level_to_string(level) << "] [" << file << ":" << line << "] ";
+            << " [" << pid_ << ":" << std::this_thread::get_id() << "] [" << level_to_string(level) << "] [" << file << ":" << line << "] ";
 
         log_impl(msg, args...);
     }
@@ -169,9 +180,10 @@ private:
         }
     }
 
+    unsigned long pid_ = 0;
     const std::string default_filedirectory_ = "logs";          // the default file directory
     const std::string default_filename_ = "log.txt";            // the default file name
-    Level level_ = Level::DEBUG;                                // the default log level
+    Level level_ = Level::Debug;                                // the default log level
     size_t max_size_;                                           // the maximum file size in bytes
     std::filesystem::path filenpath_;                           // the current file path
     std::unique_ptr<std::ofstream> file_stream_;                // the current file stream
