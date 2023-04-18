@@ -32,7 +32,7 @@ int main()
 
 日志文件内容
 ````
-2023-04-07 19:06:11.277 [5068] [DEBUG] [..\MiniLogger\main.cpp:13] This is a message: 
-2023-04-07 19:06:11.279 [5068] [WARNING] [..\MiniLogger\main.cpp:14] This is a message with multiple arguments: 1 2 3
+2023-04-18 09:17:00.128 [29504:24792] [DEBUG] [..\MiniLogger\main.cpp:13] This is a message: 
+2023-04-18 09:17:00.130 [29504:24792] [WARNING] [..\MiniLogger\main.cpp:14] This is a message with multiple arguments: 1 2 3
 
 ````
