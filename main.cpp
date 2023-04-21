@@ -7,7 +7,7 @@
 int main()
 {
     // Get the logger instance
-    auto& logger = Logger::get_instance("mylogs", "wwww.log", 10*1024*1024);
+    auto& logger = Logger::get_instance("Logs", "test.log", 2*1000);
 
     // Set the log level to debug
     logger.set_level(Logger::Debug);

@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <array>
 #include <queue>
+#include <regex>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -62,31 +63,37 @@ private:
         pid_ = getpid();
 #endif
 
-        std::string file_directory;
         if (filedirectory.empty()) {
-            std::filesystem::create_directories(default_filedirectory_);
-            file_directory = default_filedirectory_;
+            file_directory_ = default_file_directory_;
         }
-        else {
-            if(std::filesystem::exists(filedirectory)) {
-                file_directory = filedirectory;
-            }
-            else {
-                std::filesystem::create_directories(filedirectory);
-                if(std::filesystem::exists(filedirectory)) {
-                    file_directory = filedirectory;
-                }
-                else {
-                    std::filesystem::create_directories(default_filedirectory_);
-                    file_directory = default_filedirectory_;
-                }
-            }
+        else{
+            file_directory_ = filedirectory;
         }
 
         if (filename.empty()) {
-            filenpath_ = std::filesystem::absolute(file_directory).append(default_filename_).string();
-        } else {
-            filenpath_ = std::filesystem::absolute(file_directory).append(filename).string();
+            filename_ = default_filename_;
+        }
+        else {
+            filename_ = filename;
+        }
+
+        if(!std::filesystem::exists(file_directory_)) {
+            std::error_code ec;
+            auto bRet = std::filesystem::create_directories(file_directory_, ec);
+            if(!bRet) {
+                std::cout << "[Error] Failed to create the log file directory(" << file_directory_ <<"). error message: " << ec.message() << std::endl;
+                return;
+            }
+        }
+
+        file_directory_ = std::filesystem::absolute(file_directory_).string();
+
+        auto last_filename = find_last_log_file(filename_);
+        if(last_filename.empty()) {
+            filenpath_ = std::filesystem::path(file_directory_).append(get_filename_with_timpstamp()).string();
+        }
+        else {
+            filenpath_ = std::filesystem::path(file_directory_).append(last_filename).string();
         }
 
         file_stream_ = std::make_unique<std::ofstream>(filenpath_, std::ios::out | std::ios::app);
@@ -145,6 +152,41 @@ private:
         return levels[level];
     }
 
+    std::string find_last_log_file(const std::string& filename) {
+        std::filesystem::path filenamepath(filename);
+        std::string str_regex;
+        str_regex += "^";
+        str_regex += filenamepath.stem();
+        str_regex += "_\\d{8}_\\d{6}_\\d{3}";
+        str_regex += filenamepath.extension();
+        str_regex += "$";
+        std::regex log_file_regex(str_regex);
+        std::vector<std::string> match_list;
+        for (const auto& entry : std::filesystem::directory_iterator(file_directory_)) {
+            if (entry.is_regular_file() && std::regex_match(entry.path().filename().string(), log_file_regex)) {
+                match_list.emplace_back(entry.path().filename().string());
+            }
+        }
+
+        if(match_list.empty()) {
+            return std::string();
+        }
+
+        std::sort(match_list.begin(), match_list.end());
+        return match_list.back();
+    }
+
+    inline std::string get_filename_with_timpstamp() {
+        auto current_time = std::chrono::system_clock::now();
+        auto current_time_t = std::chrono::system_clock::to_time_t(current_time);
+        auto current_tm = *std::localtime(&current_time_t);
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()) % 1000;
+        std::stringstream ss;
+        std::filesystem::path tmp_path(filename_);
+        ss << tmp_path.stem().c_str() << std::put_time(&current_tm, "_%Y%m%d_%H%M%S_") << std::setfill('0') << std::setw(3) << ms.count() << tmp_path.extension().c_str();
+        return ss.str();
+    }
+
     void write_to_file() {
         while (true) { // loop until stop
             std::unique_lock<std::mutex> lock(mutex_);
@@ -162,7 +204,7 @@ private:
     void check_file_size() {
         if (file_stream_->tellp() > max_size_) { // if the current file size is larger than the limit
             file_stream_->close(); // close the current file stream
-            filenpath_ = get_next_filename(); // get a new file name
+            filenpath_ = std::filesystem::path(file_directory_).append(get_filename_with_timpstamp()).string(); // get a new file name
             file_stream_->open(filenpath_, std::ios::out | std::ios::app); // open a new file stream
             if (!file_stream_->is_open()) { // check if the new file stream is opened successfully
                 throw std::runtime_error("Failed to open log file: " + filenpath_.string());
@@ -170,19 +212,11 @@ private:
         }
     }
 
-    std::filesystem::path get_next_filename() {
-        int i = 1; // start from 1
-        while (true) { // loop until find a valid file name
-            auto new_filepath = filenpath_.parent_path().append(filenpath_.stem().string() + "_" + std::to_string(i++) + filenpath_.extension().string()); // append a number to the original file name
-            if (!std::filesystem::exists(new_filepath)) { // check if the new file name does not exist
-                return new_filepath; // return the new file name
-            }
-        }
-    }
-
-    unsigned long pid_ = 0;
-    const std::string default_filedirectory_ = "logs";          // the default file directory
+    unsigned long pid_ = 0;                                     // the current process id
+    const std::string default_file_directory_ = "logs";         // the default file directory
     const std::string default_filename_ = "log.txt";            // the default file name
+    std::string file_directory_;                                // the current file directory
+    std::string filename_;                                      // the current file name
     Level level_ = Level::Debug;                                // the default log level
     size_t max_size_;                                           // the maximum file size in bytes
     std::filesystem::path filenpath_;                           // the current file path
