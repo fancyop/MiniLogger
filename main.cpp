@@ -1,6 +1,8 @@
 #include "logger.hpp"
 
-#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" ) // 设置入口地址1
+#ifdef _WIN32
+#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )
+#endif
 
 int main()
 {
