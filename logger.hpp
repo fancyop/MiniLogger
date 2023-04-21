@@ -15,7 +15,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#elif __unix__
+#else
 #include <unistd.h>
 #endif
 
@@ -59,7 +59,7 @@ private:
 
 #ifdef _WIN32
         pid_ = GetCurrentProcessId();
-#elif __unix__
+#else
         pid_ = getpid();
 #endif
 
