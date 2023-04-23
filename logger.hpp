@@ -199,7 +199,7 @@ private:
 #endif
         std::stringstream ss;
         std::filesystem::path tmp_path(filename_);
-        ss << tmp_path.stem().c_str() << std::put_time(&now_tm, "_%Y%m%d_%H%M%S_") << std::setfill('0') << std::setw(3) << now_ms.count() << tmp_path.extension().c_str();
+        ss << tmp_path.stem().string() << std::put_time(&now_tm, "_%Y%m%d_%H%M%S_") << std::setfill('0') << std::setw(3) << now_ms.count() << tmp_path.extension().string();
         return ss.str();
     }
 
