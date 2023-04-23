@@ -122,10 +122,12 @@ private:
         auto now = std::chrono::system_clock::now();
         auto now_c = std::chrono::system_clock::to_time_t(now);
         auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
-
         std::tm now_tm;
-        gmtime_r(&now_c, &now_tm);
-
+#ifdef _MSC_VER
+        localtime_s(&now_tm, &now_c);
+#else
+        localtime_r(&now_c, &now_tm);
+#endif
         std::stringstream msg;
         msg << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S") << "." << std::setfill('0') << std::setw(3) << now_ms
             << " [" << pid_ << ":" << std::this_thread::get_id() << "] [" << level_to_string(level) << "] [" << file << ":" << line << "] ";
@@ -189,10 +191,12 @@ private:
         auto now = std::chrono::system_clock::now();
         auto now_c = std::chrono::system_clock::to_time_t(now);
         auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-
         std::tm now_tm;
-        gmtime_r(&now_c, &now_tm);
-
+#ifdef _MSC_VER
+        localtime_s(&now_tm, &now_c);
+#else
+        localtime_r(&now_c, &now_tm);
+#endif
         std::stringstream ss;
         std::filesystem::path tmp_path(filename_);
         ss << tmp_path.stem().c_str() << std::put_time(&now_tm, "_%Y%m%d_%H%M%S_") << std::setfill('0') << std::setw(3) << now_ms.count() << tmp_path.extension().c_str();
