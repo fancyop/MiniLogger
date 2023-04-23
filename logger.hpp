@@ -123,7 +123,7 @@ private:
         auto now_c = std::chrono::system_clock::to_time_t(now);
         auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
         std::tm now_tm;
-#ifdef _MSC_VER
+#ifdef _WIN32
         localtime_s(&now_tm, &now_c);
 #else
         localtime_r(&now_c, &now_tm);
@@ -192,7 +192,7 @@ private:
         auto now_c = std::chrono::system_clock::to_time_t(now);
         auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
         std::tm now_tm;
-#ifdef _MSC_VER
+#ifdef _WIN32
         localtime_s(&now_tm, &now_c);
 #else
         localtime_r(&now_c, &now_tm);
