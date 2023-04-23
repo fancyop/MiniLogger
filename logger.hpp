@@ -28,8 +28,8 @@ public:
         Error
     };
 
-    static Logger& get_instance(const std::string& filedirectory = "", const std::string& filename = "", size_t max_size = 5 * 1024 * 1024) {
-        static Logger instance(filedirectory, filename, max_size);
+    static Logger& get_instance(const std::string& filedirectory = "", const std::string& filename = "", size_t max_size = 5 * 1024 * 1024, size_t max_num = 10) {
+        static Logger instance(filedirectory, filename, max_size, max_num);
         return instance;
     }
 
@@ -55,7 +55,7 @@ public:
     }
 
 private:
-    Logger(const std::string& filedirectory, const std::string& filename, size_t max_size) : max_size_(max_size), stop_(false) {
+    Logger(const std::string& filedirectory, const std::string& filename, size_t max_size, size_t max_num) : max_size_(max_size), max_num_(max_num), stop_(false) {
 
 #ifdef _WIN32
         pid_ = GetCurrentProcessId();
@@ -173,6 +173,12 @@ private:
         }
 
         std::sort(match_list.begin(), match_list.end());
+
+        if (match_list.size() > max_num_) {
+            // If the limit is exceeded, delete the oldest log file
+            std::filesystem::remove(std::filesystem::path(file_directory_).append(match_list.front()));
+        }
+
         return match_list.back();
     }
 
@@ -219,6 +225,7 @@ private:
     std::string filename_;                                      // the current file name
     Level level_ = Level::Debug;                                // the default log level
     size_t max_size_;                                           // the maximum file size in bytes
+    size_t max_num_;                                            // the maximum number of files
     std::filesystem::path filenpath_;                           // the current file path
     std::unique_ptr<std::ofstream> file_stream_;                // the current file stream
     std::mutex mutex_;                                          // the mutex for thread-safety
