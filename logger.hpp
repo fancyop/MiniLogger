@@ -100,7 +100,7 @@ private:
         if (!file_stream_->is_open()) {
             throw std::runtime_error("Failed to open log file: " + filenpath_.string());
         }
-        file_stream_->seekp(0, std::ios::end);
+
         // start a new thread to write messages to file
         writer_thread_ = std::make_unique<std::thread>(&Logger::write_to_file, this);
     }
@@ -202,13 +202,13 @@ private:
             queue_.pop(); // pop the message from the queue
             lock.unlock(); // unlock the mutex
 
-            check_file_size(); // check if the current file size exceeds the limit
+            check_file_size(msg.size()); // check if the current file size exceeds the limit
             *file_stream_ << msg << std::endl; // write the message to the file
         }
     }
 
-    void check_file_size() {
-        if (file_stream_->tellp() > max_size_) { // if the current file size is larger than the limit
+    void check_file_size(size_t next_msg_size) {
+        if ((std::filesystem::file_size(filenpath_) + next_msg_size) > max_size_) { // if the current file size is larger than the limit
             file_stream_->close(); // close the current file stream
             filenpath_ = std::filesystem::path(file_directory_).append(get_filename_with_timpstamp()).string(); // get a new file name
             file_stream_->open(filenpath_, std::ios::out | std::ios::app); // open a new file stream
