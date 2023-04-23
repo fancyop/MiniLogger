@@ -156,9 +156,9 @@ private:
         std::filesystem::path filenamepath(filename);
         std::string str_regex;
         str_regex += "^";
-        str_regex += filenamepath.stem();
+        str_regex += filenamepath.stem().string();
         str_regex += "_\\d{8}_\\d{6}_\\d{3}";
-        str_regex += filenamepath.extension();
+        str_regex += filenamepath.extension().string();
         str_regex += "$";
         std::regex log_file_regex(str_regex);
         std::vector<std::string> match_list;
