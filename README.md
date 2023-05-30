@@ -8,29 +8,33 @@
 - 支持异步文件写入
 - 支持指定文件大小分片
 - 支持指定文件个数限制
+- 支持值按占位符插入的格式化
 
 ### 使用方法
 
 使用示例
+
 ```` cpp
 #include "logger.hpp"
 
 int main()
 {
     // Get the logger instance
-    auto& logger = Logger::get_instance("Logs", "test.log", 2*1000, 5);
+    auto& logger = Logger::get_instance("Logs", "test.log", 2*1024*1024, 5);
 
     // Set the log level to debug
     logger.set_level(Logger::Debug);
 
-    LOG_DEBUG("This is a message: ");
-    LOG_WARNING("This is a message with multiple arguments: ", 1, " ", 2.0, " ", '3');
+    LOG_DEBUG("This is a message");
+    LOG_DEBUG("This is a message with one argument, {}","logger test.");
+    LOG_WARNING("This is a message with multiple arguments, arg1={}, arg2={}, arg3={}", 123, 0.618f, "hello!");
 
     return 0;
 }
 ````
 
 日志文件命名规则
+
 ````
 .
 ├── Logs
@@ -40,8 +44,11 @@ int main()
 ````
 
 日志文件内容
+
 ````
-2023-04-18 09:17:00.128 [29504:24792] [DEBUG] [..\MiniLogger\main.cpp:13] This is a message: 
-2023-04-18 09:17:00.130 [29504:24792] [WARNING] [..\MiniLogger\main.cpp:14] This is a message with multiple arguments: 1 2 3
+
+2023-05-30 17:26:32.386 [28924:21076] [DEBUG] [X:\MiniLogger\main.cpp:15] This is a message
+2023-05-30 17:26:32.388 [28924:21076] [DEBUG] [X:\MiniLogger\main.cpp:16] This is a message with one argument, logger test.
+2023-05-30 17:26:32.388 [28924:21076] [WARNING] [X:\MiniLogger\main.cpp:17] This is a message with multiple arguments, arg1=123, arg2=0.618, arg3=hello!
 
 ````

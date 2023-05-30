@@ -34,20 +34,20 @@ public:
     }
 
     template<typename ...Args>
-    void debug(const char* file, int line, Args... args) {
-        log(Debug, file, line, args...);
+    void debug(const char* file, int line, const std::string& format, Args&&... args) {
+        log(Debug, file, line, format, args...);
     }
     template<typename ...Args>
-    void info(const char* file, int line, Args... args) {
-        log(Info, file, line, args...);
+    void info(const char* file, int line, const std::string& format, Args&&... args) {
+        log(Info, file, line, format, args...);
     }
     template<typename ...Args>
-    void warning(const char* file, int line, Args... args) {
-        log(Warning, file, line, args...);
+    void warning(const char* file, int line, const std::string& format, Args&&... args) {
+        log(Warning, file, line, format, args...);
     }
     template<typename ...Args>
-    void error(const char* file, int line, Args... args) {
-        log(Error, file, line, args...);
+    void error(const char* file, int line, const std::string& format, Args&&... args) {
+        log(Error, file, line, format, args...);
     }
 
     void set_level(Level level) {
@@ -116,7 +116,7 @@ private:
     Logger& operator=(const Logger&) = delete;
 
     template<typename ...Args>
-    void log(Level level, const char* file, int line, Args&&... args) {
+    void log(Level level, const char* file, int line, const std::string& format, Args&&... args) {
         if (level < level_) return;
 
         auto now = std::chrono::system_clock::now();
@@ -132,13 +132,8 @@ private:
         msg << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S") << "." << std::setfill('0') << std::setw(3) << now_ms
             << " [" << pid_ << ":" << std::this_thread::get_id() << "] [" << level_to_string(level) << "] [" << file << ":" << line << "] ";
 
-        log_impl(msg, args...);
-    }
+        log_impl(msg, format, std::forward<Args>(args)...);
 
-    template<typename T>
-    void log_impl(std::stringstream& msg, T&& arg) {
-        msg << arg; // append the last argument to the message
-        // push the message to the queue and notify the writer thread
         {
             std::lock_guard<std::mutex> lock(mutex_);
             queue_.push(msg.str());
@@ -146,15 +141,24 @@ private:
         }
     }
 
-    template<typename T, typename ...Args>
-    void log_impl(std::stringstream& msg, T&& arg, Args&&... args) {
-        msg << arg; // append the current argument to the message
-        log_impl(msg, args...); // recursively call log_impl with the remaining arguments
+    template<typename T, typename... Args>
+    void log_impl(std::ostream& os, const std::string& format, T&& arg, Args&&... args) {
+        size_t placeholder_pos = format.find("{}");
+        if (placeholder_pos != std::string::npos) {
+            os << format.substr(0, placeholder_pos);
+            os << std::forward<T>(arg);
+            log_impl(os, format.substr(placeholder_pos + 2), std::forward<Args>(args)...);
+        } else {
+            os << format;
+        }
     }
 
-    const char* level_to_string(Level level) {
-        static const char* levels[] = {"DEBUG", "INFO", "WARNING", "ERROR"};
-        return levels[level];
+    void log_impl(std::ostream& os, const std::string& format) {
+        os << format;
+    }
+
+    constexpr const std::string& level_to_string(Level level) {
+        return levels_[level];
     }
 
     std::string find_last_log_file(const std::string& filename) {
@@ -227,6 +231,8 @@ private:
             }
         }
     }
+
+    const std::array<std::string, 4> levels_ = {"DEBUG", "INFO", "WARNING", "ERROR"};
 
     unsigned long pid_ = 0;                                     // the current process id
     const std::string default_file_directory_ = "logs";         // the default file directory
